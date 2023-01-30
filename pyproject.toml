@@ -16,6 +16,8 @@ torch-sparse ={url="https://data.pyg.org/whl/torch-1.13.0%2Bcpu/torch_sparse-0.6
 torch-spline-conv = {url="https://data.pyg.org/whl/torch-1.13.0%2Bcpu/torch_spline_conv-1.2.1-cp39-cp39-macosx_10_15_x86_64.whl"}
 torch-geometric = "^2.2.0"
 kedro = "^0.18.4"
+pandas = "^1.5.3"
+modin = "^0.18.1"
 
 [tool.poetry.dev-dependencies]
 
