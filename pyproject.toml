@@ -1,0 +1,42 @@
+[tool.poetry]
+name = "recommender-geometric"
+version = "0.1.0"
+description = ""
+authors = ["bertrand <bertrand.gallice.pro@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.11"
+torch = "^1.13.1"
+torchvision = "^0.14.1"
+torchaudio = "^0.13.1"
+pyg-lib = {url="https://data.pyg.org/whl/torch-1.13.0%2Bcpu/pyg_lib-0.1.0%2Bpt113-cp39-cp39-macosx_10_15_x86_64.whl"}
+torch-scatter = {url="https://data.pyg.org/whl/torch-1.13.0%2Bcpu/torch_scatter-2.1.0-cp39-cp39-macosx_10_15_x86_64.whl"}
+torch-cluster = {url="https://data.pyg.org/whl/torch-1.13.0%2Bcpu/torch_cluster-1.6.0-cp39-cp39-macosx_10_15_x86_64.whl"}
+torch-sparse ={url="https://data.pyg.org/whl/torch-1.13.0%2Bcpu/torch_sparse-0.6.16-cp39-cp39-macosx_10_15_x86_64.whl"}
+torch-spline-conv = {url="https://data.pyg.org/whl/torch-1.13.0%2Bcpu/torch_spline_conv-1.2.1-cp39-cp39-macosx_10_15_x86_64.whl"}
+torch-geometric = "^2.2.0"
+kedro = "^0.18.4"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.kedro]
+package_name = "recommender_geometric"
+project_name = "Recommender Geometric"
+project_version = "0.18.4"
+
+[tool.isort]
+profile = "black"
+
+[tool.pytest.ini_options]
+addopts = """
+--cov-report term-missing \
+--cov src/recommender_geometric -ra"""
+
+[tool.coverage.report]
+fail_under = 0
+show_missing = true
+exclude_lines = ["pragma: no cover", "raise NotImplementedError"]
