@@ -18,6 +18,7 @@ torch-geometric = "^2.2.0"
 kedro = "^0.18.4"
 pandas = "^1.5.3"
 modin = "^0.18.1"
+ray = "^2.2.0"
 
 [tool.poetry.dev-dependencies]
 

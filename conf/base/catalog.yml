@@ -23,6 +23,8 @@ movies:
 ratings:
   type: pandas.CSVDataSet
   filepath: data/01_raw/ratings.csv
+  load_args:
+    nrows: 100000
 
 tags:
   type: pandas.CSVDataSet
