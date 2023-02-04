@@ -7,6 +7,7 @@ import pandas
 import pandas as pd
 import torch
 from torch_geometric.data import HeteroData
+from torch_geometric.transforms import ToUndirected, RandomLinkSplit
 from typing import Tuple
 import numpy as np
 
@@ -28,17 +29,24 @@ def create_dataframe_graph_edges(
     movies = pd.DataFrame(movies)
     ratings = pd.DataFrame(ratings)
 
-    movie_id_to_node_id = {
-        movie_id: node_id for node_id, movie_id in enumerate(movies["movieId"].unique())
-    }
-    movies["movie_node_id"] = movies["movieId"].map(lambda x: movie_id_to_node_id[x])
-
-    user_id_to_node_id = {
-        user_id: node_id for node_id, user_id in enumerate(ratings["userId"].unique())
-    }
-    ratings["user_node_id"] = ratings["userId"].map(lambda x: user_id_to_node_id[x])
-
     edges_dataframe = pd.merge(ratings, movies, on="movieId", how="inner")
+
+    # assign nodes ids as a range to movieId and userId
+    movie_id_to_node_id = {
+        movie_id: node_id for node_id, movie_id in enumerate(edges_dataframe["movieId"].unique())
+    }
+    edges_dataframe["movie_node_id"] = edges_dataframe["movieId"].map(
+        lambda x: movie_id_to_node_id[x]
+    )
+    user_id_to_node_id = {
+        user_id: node_id for node_id, user_id in enumerate(edges_dataframe["userId"].unique())
+    }
+    edges_dataframe["user_node_id"] = edges_dataframe["userId"].map(lambda x: user_id_to_node_id[x])
+
+    # convert ratings from a float [0,5] scale to an integer [0,100] scale
+    edges_dataframe["rating"] = (
+        (edges_dataframe["rating"] / edges_dataframe["rating"].max()) * 100
+    ).astype(int)
 
     return edges_dataframe[
         ["userId", "movieId", "rating", "title", "user_node_id", "movie_node_id"]
@@ -56,31 +64,32 @@ def create_dataframe_graph_edges(
 #     return users_attributes_dataframe
 
 
-def create_dataframe_movies_nodes_attributes(
-    edges_dataframe: pd.DataFrame,
-    movies: pandas.DataFrame,
-    genome_scores: pandas.DataFrame,
-    genome_tags: pandas.DataFrame,
-) -> pd.DataFrame:
-    movies = pd.DataFrame(movies)
-    genome_scores = pd.DataFrame(genome_scores)
-    genome_tags = pd.DataFrame(genome_tags)
-
-    movies_attributes = pd.merge(genome_scores, genome_tags, on="tagId", how="inner")
-    movies_attributes = pd.merge(
-        movies_attributes, edges_dataframe[["movieId", "movie_node_id"]], on="movieId", how="inner"
-    )
-    movies_attributes = movies_attributes.rename(columns={"relevance": "tag_relevance"})
-    movies_attributes = pd.merge(movies_attributes, movies, on="movieId", how="inner")
-
-    return movies_attributes[
-        ["movie_node_id", "movieId", "tagId", "tag_relevance", "tag", "title", "genres"]
-    ]
+# def create_dataframe_movies_nodes_attributes(
+#     edges_dataframe: pd.DataFrame,
+#     movies: pandas.DataFrame,
+#     genome_scores: pandas.DataFrame,
+#     genome_tags: pandas.DataFrame,
+# ) -> pd.DataFrame:
+#     movies = pd.DataFrame(movies)
+#     genome_scores = pd.DataFrame(genome_scores)
+#     genome_tags = pd.DataFrame(genome_tags)
+#
+#     movies_attributes = pd.merge(genome_scores, genome_tags, on="tagId", how="inner")
+#     movies_attributes = pd.merge(
+#         movies_attributes, edges_dataframe[["movieId", "movie_node_id"]], on="movieId", how="inner"
+#     )
+#     movies_attributes = movies_attributes.rename(columns={"relevance": "tag_relevance"})
+#     movies_attributes = pd.merge(movies_attributes, movies, on="movieId", how="inner")
+#
+#     return movies_attributes[
+#         ["movie_node_id", "movieId", "tagId", "tag_relevance", "tag", "title", "genres"]
+#     ]
 
 
 def define_users_to_movies_edges(
     edges_dataframe: pd.DataFrame,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
+
     # source nodes
     src = edges_dataframe["user_node_id"].values.tolist()
     # destination nodes
@@ -88,10 +97,10 @@ def define_users_to_movies_edges(
     # weight of each edge
     weight = edges_dataframe["rating"].values.tolist()
 
-    edges_index = torch.tensor([src, dst], dtype=torch.long)
-    edges_attr = torch.tensor(weight, dtype=torch.float)
+    edge_index = torch.tensor([src, dst])
+    edge_label = torch.tensor(weight)
 
-    return edges_index, edges_attr
+    return edge_index, edge_label
 
 
 def define_movies_attributes(
@@ -99,13 +108,17 @@ def define_movies_attributes(
     genome_scores: pd.DataFrame,
 ) -> torch.Tensor:
 
+    # merge node ids to movies genome scores
+    # right join to keep all nodes in the output dataframe
+    movie_id_to_node_id = edges_dataframe[["movieId", "movie_node_id"]].drop_duplicates()
     nodes_genome_scores = pd.merge(
         genome_scores,
-        edges_dataframe[["movieId", "movie_node_id"]].drop_duplicates(),
+        movie_id_to_node_id,
         on="movieId",
-        how="inner",
+        how="right",
     )
-    # memory efficient pivot
+
+    # pivot chunks with genome as columns and movie node id as index
     n_movies_per_chunk, unique_movies = 100, nodes_genome_scores["movie_node_id"].unique()
     pivoted_chunks = []
     for movies_chunk in np.array_split(unique_movies, n_movies_per_chunk):
@@ -115,23 +128,50 @@ def define_movies_attributes(
     pivoted_nodes_genome_scores = pd.concat(pivoted_chunks, axis=0)
     pivoted_nodes_genome_scores = pivoted_nodes_genome_scores.sort_index()
 
+    # fill missing genome relevances with 0, for movies without a defined genome
+    pivoted_nodes_genome_scores = pivoted_nodes_genome_scores.fillna(0)
+
+    # convert movies attributes dataframe to torch tensor
+    # todo move outside of func to log the dataframe in kedro
     movies_nodes_attr = pivoted_nodes_genome_scores.values.tolist()
-    movies_nodes_attr = torch.tensor(movies_nodes_attr, dtype=torch.float)
+    movies_nodes_attr = torch.tensor(movies_nodes_attr)
 
     return movies_nodes_attr
 
 
 def create_pyg_network(
-    edges_index: torch.Tensor,
-    edges_attr: torch.Tensor,
+    edge_index: torch.Tensor,
+    edge_label: torch.Tensor,
     movies_nodes_attr: torch.Tensor,
     # users_nodes_attr: torch.Tensor,
 ) -> HeteroData:
-    user_movies_network = HeteroData()
 
-    user_movies_network["movie"].x = movies_nodes_attr
+    data = HeteroData()
 
-    user_movies_network["user", "rates", "movie"].edges_index = edges_index
-    user_movies_network["user", "rates", "movie"].edges_attr = edges_attr
+    data["movie"].x = movies_nodes_attr
+    n_users = len(set(edge_index[0, :].tolist()))
+    data["user"].x = torch.eye(n_users)
 
-    return user_movies_network
+    data["user", "rates", "movie"].edge_index = edge_index
+    data["user", "rates", "movie"].edge_label = edge_label
+
+    # Add a reverse ('movie', 'rev_rates', 'user') relation for message passing.
+    data = ToUndirected()(data)
+    del data["movie", "rev_rates", "user"].edge_label  # Remove "reverse" label.
+
+    return data
+
+
+
+def make_ttv_data(data):
+
+    # Perform a link-level split into training, validation, and test edges.
+    train_data, val_data, test_data = RandomLinkSplit(
+        num_val=0.1,
+        num_test=0.1,
+        neg_sampling_ratio=0.0,
+        edge_types=[('user', 'rates', 'movie')],  # for heteroData
+        rev_edge_types=[('movie', 'rev_rates', 'user')],  # for heteroData
+    )(data)
+
+    return train_data, val_data, test_data

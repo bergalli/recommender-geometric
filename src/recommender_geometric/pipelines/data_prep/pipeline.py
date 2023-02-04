@@ -7,10 +7,11 @@ from kedro.pipeline import Pipeline, node, pipeline
 from .nodes import (
     create_dataframe_graph_edges,
     # create_dataframe_users_nodes_attributes,
-    create_dataframe_movies_nodes_attributes,
+    # create_dataframe_movies_nodes_attributes,
     define_users_to_movies_edges,
     define_movies_attributes,
     create_pyg_network,
+make_ttv_data
 )
 
 
@@ -33,22 +34,22 @@ def create_pipeline(**kwargs) -> Pipeline:
             #     ),
             #     outputs="users_attributes_dataframe",
             # ),
-            node(
-                create_dataframe_movies_nodes_attributes,
-                inputs=dict(
-                    edges_dataframe="edges_dataframe",
-                    movies="movies",
-                    genome_scores="genome_scores",
-                    genome_tags="genome_tags",
-                ),
-                outputs="movies_attributes_dataframe",
-            ),
+            # node(
+            #     create_dataframe_movies_nodes_attributes,
+            #     inputs=dict(
+            #         edges_dataframe="edges_dataframe",
+            #         movies="movies",
+            #         genome_scores="genome_scores",
+            #         genome_tags="genome_tags",
+            #     ),
+            #     outputs="movies_attributes_dataframe",
+            # ),
             node(
                 define_users_to_movies_edges,
                 inputs=dict(
                     edges_dataframe="edges_dataframe",
                 ),
-                outputs=["edges_index", "edges_attr"],
+                outputs=["edge_index", "edge_label"],
             ),
             node(
                 define_movies_attributes,
@@ -61,12 +62,17 @@ def create_pipeline(**kwargs) -> Pipeline:
             node(
                 create_pyg_network,
                 inputs=dict(
-                    edges_index="edges_index",
-                    edges_attr="edges_attr",
+                    edge_index="edge_index",
+                    edge_label="edge_label",
                     movies_nodes_attr="movies_nodes_attr",
                     # users_nodes_attr="users_nodes_attr",
                 ),
                 outputs="users_rating_movies_network"
             ),
+            node(
+                make_ttv_data,
+                inputs=dict(data="users_rating_movies_network",),
+                outputs=["train_data", "val_data", "test_data"]
+            )
         ],
     )

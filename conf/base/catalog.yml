@@ -24,8 +24,34 @@ ratings:
   type: pandas.CSVDataSet
   filepath: data/01_raw/ratings.csv
   load_args:
-    nrows: 100000
+    nrows: 300329 # dataframe size control // number of edges user->movie
 
 tags:
   type: pandas.CSVDataSet
   filepath: data/01_raw/tags.csv
+
+
+
+users_rating_movies_network:
+  type: CachedDataSet
+  dataset:
+    type: pickle.PickleDataSet
+    filepath: data/04_feature/users_rating_movies_network.pickle
+
+train_data:
+  type: CachedDataSet
+  dataset:
+    type: pickle.PickleDataSet
+    filepath: data/05_model_input/train_data.pickle
+
+val_data:
+  type: CachedDataSet
+  dataset:
+    type: pickle.PickleDataSet
+    filepath: data/05_model_input/val_data.pickle
+
+test_data:
+  type: CachedDataSet
+  dataset:
+    type: pickle.PickleDataSet
+    filepath: data/05_model_input/test_data.pickle
