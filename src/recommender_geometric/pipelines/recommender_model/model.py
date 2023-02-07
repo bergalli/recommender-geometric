@@ -12,9 +12,10 @@ def weighted_mse_loss(pred, target, weight=None):
 def train_model(model, optimizer, train_data, weight=None):
     model.train()
     optimizer.zero_grad()
-    pred = model(
-        train_data.x_dict, train_data.edge_index_dict, train_data["user", "movie"].edge_label_index
-    )
+
+    edge_label_index_remapping = _remap_batch_node_ids(train_data["user", "movie"].edge_label_index)
+
+    pred = model(train_data.x_dict, train_data.edge_index_dict, edge_label_index_remapping)
     target = train_data["user", "movie"].edge_label
     loss = weighted_mse_loss(pred, target, weight)
     loss.backward()
@@ -25,11 +26,35 @@ def train_model(model, optimizer, train_data, weight=None):
 @torch.no_grad()
 def test_model(model, data):
     model.eval()
-    pred = model(data.x_dict, data.edge_index_dict, data["user", "movie"].edge_label_index)
+
+    edge_label_index_remapping = _remap_batch_node_ids(data["user", "movie"].edge_label_index)
+
+    pred = model(
+        data.x_dict, data.edge_index_dict, edge_label_index_remapping
+    )  # data["user", "movie"].edge_label_index
+
     pred = pred.clamp(min=0, max=5)
     target = data["user", "movie"].edge_label.float()
     rmse = F.mse_loss(pred, target).sqrt()
     return float(rmse)
+
+
+def _remap_batch_node_ids(edge_label_index):
+    user_node_ids_mapper = {
+        int(old_id): new_id
+        for new_id, old_id in enumerate(edge_label_index[0, :].unique())
+    }
+    movie_node_ids_mapper = {
+        int(old_id): new_id
+        for new_id, old_id in enumerate(edge_label_index[1, :].unique())
+    }
+    edge_label_index_remapping = torch.tensor(
+        [
+            [user_node_ids_mapper[int(id)] for id in edge_label_index[0, :]],
+            [movie_node_ids_mapper[int(id)] for id in edge_label_index[1, :]],
+        ]
+    )
+    return edge_label_index_remapping
 
 
 class GNNEncoder(torch.nn.Module):

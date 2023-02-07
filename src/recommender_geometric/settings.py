@@ -9,7 +9,7 @@ https://kedro.readthedocs.io/en/stable/kedro_project_setup/settings.html."""
 # Installed plugins for which to disable hook auto-registration.
 # DISABLE_HOOKS_FOR_PLUGINS = ("kedro-viz",)
 
-# Class that manages storing KedroSession data.
+# Class that manages storing KedroSession train_data.
 # from kedro.framework.session.shelvestore import ShelveStore
 # SESSION_STORE_CLASS = ShelveStore
 # Keyword arguments to pass to the `SESSION_STORE_CLASS` constructor.

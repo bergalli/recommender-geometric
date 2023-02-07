@@ -17,10 +17,15 @@ torch-spline-conv = {url="https://data.pyg.org/whl/torch-1.13.0%2Bcpu/torch_spli
 torch-geometric = "^2.2.0"
 kedro = "^0.18.4"
 pandas = "^1.5.3"
-modin = "^0.18.1"
 ray = "^2.2.0"
+modin = "^0.18.1"
 
 [tool.poetry.dev-dependencies]
+
+[tool.poetry.group.dev.dependencies]
+kedro-viz = "^5.2.1"
+ipykernel = "^6.21.1"
+matplotlib = "^3.6.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

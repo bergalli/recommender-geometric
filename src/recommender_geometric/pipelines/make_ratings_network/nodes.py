@@ -1,15 +1,16 @@
 """
-This is a boilerplate pipeline 'data_prep'
+This is a boilerplate pipeline 'make_ratings_network'
 generated using Kedro 0.18.4
 """
 
+
+from typing import Tuple
+
+import numpy as np
 import pandas
 import pandas as pd
 import torch
 from torch_geometric.data import HeteroData
-from torch_geometric.transforms import ToUndirected, RandomLinkSplit
-from typing import Tuple
-import numpy as np
 
 
 def create_dataframe_graph_edges(
@@ -155,23 +156,21 @@ def create_pyg_network(
     data["user", "rates", "movie"].edge_index = edge_index
     data["user", "rates", "movie"].edge_label = edge_label
 
-    # Add a reverse ('movie', 'rev_rates', 'user') relation for message passing.
-    data = ToUndirected()(data)
-    del data["movie", "rev_rates", "user"].edge_label  # Remove "reverse" label.
+    # data_list = []
+    # batch_size=1000
+    # for idx in np.arange(0, edge_index.shape[1], batch_size):
+    #     train_data = HeteroData()
+    #
+    #     train_data["movie"].x = movies_nodes_attr
+    #     n_users = len(set(edge_index[0, :].tolist()))
+    #     train_data["user"].x = torch.eye(n_users)
+    #
+    #     train_data["user", "rates", "movie"].edge_index = edge_index[:, idx:idx + batch_size]
+    #     train_data["user", "rates", "movie"].edge_label = edge_label[idx:idx + batch_size]
+    #
+    #     # Add a reverse ('movie', 'rev_rates', 'user') relation for message passing.
+    #     train_data = ToUndirected()(train_data)
+    #     del train_data["movie", "rev_rates", "user"].edge_label  # Remove "reverse" label.
+    #     data_list.append(train_data)
 
     return data
-
-
-
-def make_ttv_data(data):
-
-    # Perform a link-level split into training, validation, and test edges.
-    train_data, val_data, test_data = RandomLinkSplit(
-        num_val=0.1,
-        num_test=0.1,
-        neg_sampling_ratio=0.0,
-        edge_types=[('user', 'rates', 'movie')],  # for heteroData
-        rev_edge_types=[('movie', 'rev_rates', 'user')],  # for heteroData
-    )(data)
-
-    return train_data, val_data, test_data

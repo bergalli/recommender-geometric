@@ -1,5 +1,5 @@
 """
-This is a boilerplate pipeline 'data_prep'
+This is a boilerplate pipeline 'make_ratings_network'
 generated using Kedro 0.18.4
 """
 
@@ -11,7 +11,6 @@ from .nodes import (
     define_users_to_movies_edges,
     define_movies_attributes,
     create_pyg_network,
-make_ttv_data
 )
 
 
@@ -67,12 +66,10 @@ def create_pipeline(**kwargs) -> Pipeline:
                     movies_nodes_attr="movies_nodes_attr",
                     # users_nodes_attr="users_nodes_attr",
                 ),
-                outputs="users_rating_movies_network"
+                outputs="users_rating_movies_network",
             ),
-            node(
-                make_ttv_data,
-                inputs=dict(data="users_rating_movies_network",),
-                outputs=["train_data", "val_data", "test_data"]
-            )
         ],
+        inputs={"movies", "ratings", "genome_scores"},
+        outputs="users_rating_movies_network",
+        namespace="data_prep",
     )

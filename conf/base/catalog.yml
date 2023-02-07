@@ -4,6 +4,14 @@
 # Link: https://kedro.readthedocs.io/en/stable/data/data_catalog.html
 
 
+ratings:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/ratings.csv
+  load_args:
+    # dataframe size control // number of edges user->movie
+    # set to null to load entire dataframe
+    nrows: 300007
+
 genome_scores:
   type: pandas.CSVDataSet
   filepath: data/01_raw/genome-scores.csv
@@ -20,17 +28,9 @@ movies:
   type: pandas.CSVDataSet
   filepath: data/01_raw/movies.csv
 
-ratings:
-  type: pandas.CSVDataSet
-  filepath: data/01_raw/ratings.csv
-  load_args:
-    nrows: 300329 # dataframe size control // number of edges user->movie
-
 tags:
   type: pandas.CSVDataSet
   filepath: data/01_raw/tags.csv
-
-
 
 users_rating_movies_network:
   type: CachedDataSet
@@ -38,20 +38,3 @@ users_rating_movies_network:
     type: pickle.PickleDataSet
     filepath: data/04_feature/users_rating_movies_network.pickle
 
-train_data:
-  type: CachedDataSet
-  dataset:
-    type: pickle.PickleDataSet
-    filepath: data/05_model_input/train_data.pickle
-
-val_data:
-  type: CachedDataSet
-  dataset:
-    type: pickle.PickleDataSet
-    filepath: data/05_model_input/val_data.pickle
-
-test_data:
-  type: CachedDataSet
-  dataset:
-    type: pickle.PickleDataSet
-    filepath: data/05_model_input/test_data.pickle

@@ -4,21 +4,57 @@ generated using Kedro 0.18.4
 """
 
 from kedro.pipeline import Pipeline, node, pipeline
-from .nodes import train_gcn_model
+from .nodes import (
+    make_graph_undirected,
+    make_ttv_data,
+    instanciate_model,
+    get_sampler_dataloader,
+    train_gcn_model_distributed,
+)
 
 
 def create_pipeline(**kwargs) -> Pipeline:
     return pipeline(
         [
             node(
-                train_gcn_model,
+                make_graph_undirected,
+                inputs=dict(
+                    data="users_rating_movies_network",
+                ),
+                outputs="undirected_graph",
+                name="pipe_start"
+            ),
+            node(
+                make_ttv_data,
+                inputs=dict(
+                    data="undirected_graph",
+                ),
+                outputs=["train_data", "val_data", "test_data"],
+            ),
+            node(
+                instanciate_model,
                 inputs=dict(
                     train_data="train_data",
+                ),
+                outputs=["model", "weight"],
+            ),
+            node(
+                get_sampler_dataloader,
+                inputs=dict(train_data="train_data"),
+                outputs="subgraph_sampler",
+            ),
+            node(
+                train_gcn_model_distributed,
+                inputs=dict(
+                    model="model",
+                    weight="weight",
+                    train_dataloader="subgraph_sampler",
                     val_data="val_data",
                     test_data="test_data",
                 ),
                 outputs="trained_model",
-                name="train_gcn_model",
-            )
-        ]
+            ),
+        ],
+        inputs={"users_rating_movies_network"},
+        namespace="recommender_model",
     )

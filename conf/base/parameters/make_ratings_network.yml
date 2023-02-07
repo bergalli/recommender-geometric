@@ -1,4 +1,4 @@
-# This is a boilerplate parameters config generated for pipeline 'data_prep'
+# This is a boilerplate parameters config generated for pipeline 'make_ratings_network'
 # using Kedro 0.18.4.
 #
 # Documentation for this file format can be found in "Parameters"

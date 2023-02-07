@@ -1,5 +1,5 @@
 """
-This is a boilerplate pipeline 'data_prep'
+This is a boilerplate pipeline 'make_ratings_network'
 generated using Kedro 0.18.4
 """
 

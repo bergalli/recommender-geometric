@@ -1,4 +1,4 @@
-# Pipeline data_prep
+# Pipeline make_ratings_network
 
 > *Note:* This is a `README.md` boilerplate generated using `Kedro 0.18.4`.
 
