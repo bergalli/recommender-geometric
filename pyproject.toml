@@ -20,12 +20,12 @@ pandas = "^1.5.3"
 ray = "^2.2.0"
 modin = "^0.18.1"
 
-[tool.poetry.dev-dependencies]
 
 [tool.poetry.group.dev.dependencies]
 kedro-viz = "^5.2.1"
 ipykernel = "^6.21.1"
 matplotlib = "^3.6.3"
+pytest = "^7.2.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
