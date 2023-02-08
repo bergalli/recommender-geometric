@@ -9,6 +9,7 @@ from .nodes import (
     make_ttv_data,
     instanciate_model,
     get_sampler_dataloader,
+train_gcn_model,
     train_gcn_model_distributed,
 )
 

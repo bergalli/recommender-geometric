@@ -8,8 +8,12 @@ import torch
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader, DataLoader
 from torch_geometric.transforms import RandomLinkSplit, ToUndirected
-
+import torch.multiprocessing as mp
 from .model import Model, train_model, test_model
+
+from torch.nn.parallel import DistributedDataParallel as DDP
+import torch.distributed as dist
+import os
 
 
 def make_graph_undirected(data: HeteroData):
@@ -68,15 +72,12 @@ def get_sampler_dataloader(train_data):
     return subgraph_loader
 
 
-def train_gcn_model(
-    config
-):
-    model = config["model"]
-    weight=config["weight"]
-    train_dataloader = config["train_dataloader"]
-    val_data = config["val_data"]
-    test_data = config["test_data"]
-
+def train_gcn_model(model, weight, train_dataloader, val_data, test_data):
+    # model = config["model"]
+    # weight = config["weight"]
+    # train_dataloader = config["train_dataloader"]
+    # val_data = config["val_data"]
+    # test_data = config["test_data"]
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
     for epoch in range(15):
@@ -93,23 +94,29 @@ def train_gcn_model(
     return model
 
 
-def train_gcn_fun(rank, world_size):
-    from torch.nn.parallel import DistributedDataParallel as DDP
-    import torch.distributed as dist
-    import os
+def train_gcn_fun(rank, world_size, model, weight, train_dataloader, val_data, test_data):
 
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12355'
+    os.environ["MASTER_ADDR"] = "localhost"
+    os.environ["MASTER_PORT"] = "12355"
 
     # initialize the process group
     dist.init_process_group("gloo", rank=rank, world_size=world_size)
 
     # create model and move it to GPU with id rank
-    model = Model().to(rank)
-    ddp_model = DDP(model, device_ids=[rank])
+    model = model.to("cpu")
+    ddp_model = DDP(model, device_ids=None)
 
-
-
+    optimizer = torch.optim.Adam(ddp_model.parameters(), lr=0.01)
+    for epoch in range(15):
+        for train_data in iter(train_dataloader):
+            loss = train_model(ddp_model, optimizer, train_data, weight)
+            train_rmse = test_model(ddp_model, train_data)
+            val_rmse = test_model(ddp_model, val_data)
+            test_rmse = test_model(ddp_model, test_data)
+            print(
+                f"Epoch: {epoch:03d}, Loss: {loss:.4f}, Train: {train_rmse:.4f}, "
+                f"Val: {val_rmse:.4f}, Test: {test_rmse:.4f}"
+            )
 
 
 def train_gcn_model_distributed(
@@ -119,10 +126,7 @@ def train_gcn_model_distributed(
     val_data,
     test_data,
 ):
-
-    mp.spawn(demo_fn,
-             args=(world_size,),
-             nprocs=world_size,
-             join=True)
+    world_size=3
+    mp.spawn(train_gcn_fun, args=(world_size, model, weight, train_dataloader, val_data, test_data), nprocs=world_size, join=True)
 
     return model
