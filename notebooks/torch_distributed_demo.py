@@ -38,15 +38,15 @@ def demo_basic(rank, world_size):
     setup(rank, world_size)
 
     # create model and move it to GPU with id rank
-    model = ToyModel().to(rank)
-    ddp_model = DDP(model, device_ids=[rank])
+    model = ToyModel().to("cpu")
+    ddp_model = DDP(model, device_ids=None)
 
     loss_fn = nn.MSELoss()
     optimizer = optim.SGD(ddp_model.parameters(), lr=0.001)
 
     optimizer.zero_grad()
     outputs = ddp_model(torch.randn(20, 10))
-    labels = torch.randn(20, 5).to(rank)
+    labels = torch.randn(20, 5).to("cpu")
     loss_fn(outputs, labels).backward()
     optimizer.step()
 

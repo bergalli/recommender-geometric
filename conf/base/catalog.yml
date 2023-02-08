@@ -5,7 +5,7 @@
 
 
 ratings:
-  type: pandas.CSVDataSet
+  type: spark.SparkDataSet
   filepath: data/01_raw/ratings.csv
   load_args:
     # dataframe size control // number of edges user->movie
@@ -13,23 +13,23 @@ ratings:
     nrows: 300007
 
 genome_scores:
-  type: pandas.CSVDataSet
+  type: spark.SparkDataSet
   filepath: data/01_raw/genome-scores.csv
 
 genome_tags:
-  type: pandas.CSVDataSet
+  type: spark.SparkDataSet
   filepath: data/01_raw/genome-tags.csv
 
 links:
-  type: pandas.CSVDataSet
+  type: spark.SparkDataSet
   filepath: data/01_raw/links.csv
 
 movies:
-  type: pandas.CSVDataSet
+  type: spark.SparkDataSet
   filepath: data/01_raw/movies.csv
 
 tags:
-  type: pandas.CSVDataSet
+  type: spark.SparkDataSet
   filepath: data/01_raw/tags.csv
 
 users_rating_movies_network:
