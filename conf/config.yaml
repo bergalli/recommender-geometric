@@ -1,0 +1,5 @@
+defaults:
+  - base@_global_:
+    - parameters
+    - parameters/dataprep_ratings_network
+    - parameters/recommender_model

@@ -16,6 +16,52 @@ import torch.distributed as dist
 import os
 
 
+def make_graph_tensors(
+    source_nodes,
+    dest_nodes,
+    weight,
+    pivoted_nodes_genome_scores,
+):
+    edge_index = torch.tensor([source_nodes, dest_nodes])
+    edge_label = torch.tensor(weight)
+
+    movies_nodes_attr = pivoted_nodes_genome_scores.values.tolist()
+    movies_nodes_attr = torch.tensor(movies_nodes_attr)
+
+    return edge_index, edge_label, movies_nodes_attr
+
+
+def create_pyg_network(edge_index, edge_label, movies_nodes_attr) -> HeteroData:
+
+    data = HeteroData()
+
+    data["movie"].x = movies_nodes_attr
+    n_users = len(set(edge_index[0, :].tolist()))
+    data["user"].x = torch.eye(n_users)
+
+    data["user", "rates", "movie"].edge_index = edge_index
+    data["user", "rates", "movie"].edge_label = edge_label
+
+    # data_list = []
+    # batch_size=1000
+    # for idx in np.arange(0, edge_index.shape[1], batch_size):
+    #     train_data = HeteroData()
+    #
+    #     train_data["movie"].x = movies_nodes_attr
+    #     n_users = len(set(edge_index[0, :].tolist()))
+    #     train_data["user"].x = torch.eye(n_users)
+    #
+    #     train_data["user", "rates", "movie"].edge_index = edge_index[:, idx:idx + batch_size]
+    #     train_data["user", "rates", "movie"].edge_label = edge_label[idx:idx + batch_size]
+    #
+    #     # Add a reverse ('movie', 'rev_rates', 'user') relation for message passing.
+    #     train_data = ToUndirected()(train_data)
+    #     del train_data["movie", "rev_rates", "user"].edge_label  # Remove "reverse" label.
+    #     data_list.append(train_data)
+
+    return data
+
+
 def make_graph_undirected(data: HeteroData):
     # Add a reverse ('movie', 'rev_rates', 'user') relation for message passing.
     data = ToUndirected()(data)
@@ -94,31 +140,6 @@ def train_gcn_model(model, weight, train_dataloader, val_data, test_data):
     return model
 
 
-def train_gcn_fun(rank, world_size, model, weight, train_dataloader, val_data, test_data):
-
-    os.environ["MASTER_ADDR"] = "localhost"
-    os.environ["MASTER_PORT"] = "12355"
-
-    # initialize the process group
-    dist.init_process_group("gloo", rank=rank, world_size=world_size)
-
-    # create model and move it to GPU with id rank
-    model = model.to("cpu")
-    ddp_model = DDP(model, device_ids=None)
-
-    optimizer = torch.optim.Adam(ddp_model.parameters(), lr=0.01)
-    for epoch in range(15):
-        for train_data in iter(train_dataloader):
-            loss = train_model(ddp_model, optimizer, train_data, weight)
-            train_rmse = test_model(ddp_model, train_data)
-            val_rmse = test_model(ddp_model, val_data)
-            test_rmse = test_model(ddp_model, test_data)
-            print(
-                f"Epoch: {epoch:03d}, Loss: {loss:.4f}, Train: {train_rmse:.4f}, "
-                f"Val: {val_rmse:.4f}, Test: {test_rmse:.4f}"
-            )
-
-
 def train_gcn_model_distributed(
     model: Model,
     weight: torch.Tensor,
@@ -126,7 +147,36 @@ def train_gcn_model_distributed(
     val_data,
     test_data,
 ):
-    world_size=3
-    mp.spawn(train_gcn_fun, args=(world_size, model, weight, train_dataloader, val_data, test_data), nprocs=world_size, join=True)
+    def train_gcn_fun(rank, world_size, model, weight, train_dataloader, val_data, test_data):
+
+        os.environ["MASTER_ADDR"] = "localhost"
+        os.environ["MASTER_PORT"] = "12355"
+
+        # initialize the process group
+        dist.init_process_group("gloo", rank=rank, world_size=world_size)
+
+        # create model and move it to GPU with id rank
+        model = model.to("cpu")
+        ddp_model = DDP(model, device_ids=None)
+
+        optimizer = torch.optim.Adam(ddp_model.parameters(), lr=0.01)
+        for epoch in range(15):
+            for train_data in iter(train_dataloader):
+                loss = train_model(ddp_model, optimizer, train_data, weight)
+                train_rmse = test_model(ddp_model, train_data)
+                val_rmse = test_model(ddp_model, val_data)
+                test_rmse = test_model(ddp_model, test_data)
+                print(
+                    f"Epoch: {epoch:03d}, Loss: {loss:.4f}, Train: {train_rmse:.4f}, "
+                    f"Val: {val_rmse:.4f}, Test: {test_rmse:.4f}"
+                )
+
+    world_size = 3
+    mp.spawn(
+        train_gcn_fun,
+        args=(world_size, model, weight, train_dataloader, val_data, test_data),
+        nprocs=world_size,
+        join=True,
+    )
 
     return model

@@ -20,7 +20,6 @@ def create_pipeline(**kwargs) -> Pipeline:
             node(
                 create_dataframe_graph_edges,
                 inputs=dict(
-                    movies="movies",
                     ratings="ratings",
                 ),
                 outputs="edges_dataframe",
@@ -48,7 +47,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                 inputs=dict(
                     edges_dataframe="edges_dataframe",
                 ),
-                outputs=["edge_index", "edge_label"],
+                outputs=["source_nodes", "dest_nodes", "weight"],
             ),
             node(
                 define_movies_attributes,
@@ -56,20 +55,10 @@ def create_pipeline(**kwargs) -> Pipeline:
                     edges_dataframe="edges_dataframe",
                     genome_scores="genome_scores",
                 ),
-                outputs="movies_nodes_attr",
-            ),
-            node(
-                create_pyg_network,
-                inputs=dict(
-                    edge_index="edge_index",
-                    edge_label="edge_label",
-                    movies_nodes_attr="movies_nodes_attr",
-                    # users_nodes_attr="users_nodes_attr",
-                ),
-                outputs="users_rating_movies_network",
+                outputs="pivoted_nodes_genome_scores",
             ),
         ],
-        inputs={"movies", "ratings", "genome_scores"},
-        outputs="users_rating_movies_network",
+        inputs={"ratings", "genome_scores"},
+        outputs={"source_nodes", "dest_nodes", "weight", "pivoted_nodes_genome_scores"},
         namespace="data_prep",
     )

@@ -8,13 +8,15 @@ from typing import Tuple
 
 import numpy as np
 import pandas
-import pandas as pd
+import pyspark.pandas as pd
 import torch
 from torch_geometric.data import HeteroData
+import warnings
+
+warnings.filterwarnings("ignore")
 
 
 def create_dataframe_graph_edges(
-    movies: pandas.DataFrame,
     ratings: pandas.DataFrame,
 ) -> pd.DataFrame:
     """
@@ -27,31 +29,30 @@ def create_dataframe_graph_edges(
     """
 
     # pandas to modin conversion
-    movies = pd.DataFrame(movies)
-    ratings = pd.DataFrame(ratings)
+    # movies = movies.to_pandas_on_spark()
+    edges_dataframe = ratings.to_pandas_on_spark()
 
-    edges_dataframe = pd.merge(ratings, movies, on="movieId", how="inner")
+    # edges_dataframe = pd.merge(ratings, movies, on="movieId", how="inner")
 
     # assign nodes ids as a range to movieId and userId
     movie_id_to_node_id = {
-        movie_id: node_id for node_id, movie_id in enumerate(edges_dataframe["movieId"].unique())
+        movie_id: node_id
+        for node_id, movie_id in enumerate(edges_dataframe["movieId"].unique().values)
     }
     edges_dataframe["movie_node_id"] = edges_dataframe["movieId"].map(
         lambda x: movie_id_to_node_id[x]
     )
     user_id_to_node_id = {
-        user_id: node_id for node_id, user_id in enumerate(edges_dataframe["userId"].unique())
+        user_id: node_id
+        for node_id, user_id in enumerate(edges_dataframe["userId"].unique().values)
     }
     edges_dataframe["user_node_id"] = edges_dataframe["userId"].map(lambda x: user_id_to_node_id[x])
 
     # convert ratings from a float [0,5] scale to an integer [0,100] scale
-    edges_dataframe["rating"] = (
-        (edges_dataframe["rating"] / edges_dataframe["rating"].max()) * 100
-    ).astype(int)
+    edges_dataframe["rating"] = (edges_dataframe["rating"] / edges_dataframe["rating"].max()) * 100
+    edges_dataframe["rating"] = edges_dataframe["rating"].astype(int)
 
-    return edges_dataframe[
-        ["userId", "movieId", "rating", "title", "user_node_id", "movie_node_id"]
-    ]
+    return edges_dataframe[["userId", "movieId", "user_node_id", "movie_node_id", "rating"]]
 
 
 # def create_dataframe_users_nodes_attributes(
@@ -89,26 +90,23 @@ def create_dataframe_graph_edges(
 
 def define_users_to_movies_edges(
     edges_dataframe: pd.DataFrame,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
     # source nodes
-    src = edges_dataframe["user_node_id"].values.tolist()
+    src = edges_dataframe["user_node_id"]
     # destination nodes
-    dst = edges_dataframe["movie_node_id"].values.tolist()
+    dst = edges_dataframe["movie_node_id"]
     # weight of each edge
-    weight = edges_dataframe["rating"].values.tolist()
+    weight = edges_dataframe["rating"]
 
-    edge_index = torch.tensor([src, dst])
-    edge_label = torch.tensor(weight)
-
-    return edge_index, edge_label
+    return src, dst, weight
 
 
 def define_movies_attributes(
     edges_dataframe: pd.DataFrame,
     genome_scores: pd.DataFrame,
-) -> torch.Tensor:
-
+) -> pd.DataFrame:
+    genome_scores = genome_scores.to_pandas_on_spark()
     # merge node ids to movies genome scores
     # right join to keep all nodes in the output dataframe
     movie_id_to_node_id = edges_dataframe[["movieId", "movie_node_id"]].drop_duplicates()
@@ -118,59 +116,18 @@ def define_movies_attributes(
         on="movieId",
         how="right",
     )
+    nodes_genome_scores["movie_node_id"] = nodes_genome_scores["movie_node_id"].astype(str)
+    nodes_genome_scores["tagId"] = nodes_genome_scores["tagId"].astype(str)
 
-    # pivot chunks with genome as columns and movie node id as index
-    n_movies_per_chunk, unique_movies = 100, nodes_genome_scores["movie_node_id"].unique()
-    pivoted_chunks = []
-    for movies_chunk in np.array_split(unique_movies, n_movies_per_chunk):
-        chunk = nodes_genome_scores.loc[nodes_genome_scores["movie_node_id"].isin(movies_chunk), :]
-        pivoted = chunk.pivot(index="movie_node_id", columns="tagId", values="relevance")
-        pivoted_chunks.append(pivoted)
-    pivoted_nodes_genome_scores = pd.concat(pivoted_chunks, axis=0)
+    pivoted_nodes_genome_scores = nodes_genome_scores.pivot(
+        index="movie_node_id", columns="tagId", values="relevance"
+    )
+    # sort index so that rows are ordered according to movie node id # todo spark pivot auto sort ?
     pivoted_nodes_genome_scores = pivoted_nodes_genome_scores.sort_index()
 
     # fill missing genome relevances with 0, for movies without a defined genome
     pivoted_nodes_genome_scores = pivoted_nodes_genome_scores.fillna(0)
 
-    # convert movies attributes dataframe to torch tensor
-    # todo move outside of func to log the dataframe in kedro
-    movies_nodes_attr = pivoted_nodes_genome_scores.values.tolist()
-    movies_nodes_attr = torch.tensor(movies_nodes_attr)
-
-    return movies_nodes_attr
+    return pivoted_nodes_genome_scores
 
 
-def create_pyg_network(
-    edge_index: torch.Tensor,
-    edge_label: torch.Tensor,
-    movies_nodes_attr: torch.Tensor,
-    # users_nodes_attr: torch.Tensor,
-) -> HeteroData:
-
-    data = HeteroData()
-
-    data["movie"].x = movies_nodes_attr
-    n_users = len(set(edge_index[0, :].tolist()))
-    data["user"].x = torch.eye(n_users)
-
-    data["user", "rates", "movie"].edge_index = edge_index
-    data["user", "rates", "movie"].edge_label = edge_label
-
-    # data_list = []
-    # batch_size=1000
-    # for idx in np.arange(0, edge_index.shape[1], batch_size):
-    #     train_data = HeteroData()
-    #
-    #     train_data["movie"].x = movies_nodes_attr
-    #     n_users = len(set(edge_index[0, :].tolist()))
-    #     train_data["user"].x = torch.eye(n_users)
-    #
-    #     train_data["user", "rates", "movie"].edge_index = edge_index[:, idx:idx + batch_size]
-    #     train_data["user", "rates", "movie"].edge_label = edge_label[idx:idx + batch_size]
-    #
-    #     # Add a reverse ('movie', 'rev_rates', 'user') relation for message passing.
-    #     train_data = ToUndirected()(train_data)
-    #     del train_data["movie", "rev_rates", "user"].edge_label  # Remove "reverse" label.
-    #     data_list.append(train_data)
-
-    return data

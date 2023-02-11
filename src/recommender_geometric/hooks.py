@@ -10,9 +10,14 @@ class SparkHooks:
         defined in project's conf folder.
         """
 
-        # Load the spark configuration in spark.yaml using the config loader
-        parameters = context.config_loader.get("spark*", "spark*/**")
-        spark_conf = SparkConf().setAll(parameters.items())
+        # # Load the spark configuration in spark.yaml using the config loader
+        # parameters = context.config_loader.get("parameters*", "parameters/**")["spark"]
+        spark_conf = SparkConf()
+        spark_conf.set('spark.driver.maxResultSize', '1g')
+        spark_conf.set('spark.driver.memory', '8g')
+        spark_conf.set('spark.executor.memory', '4g')
+        spark_conf.set('spark.scheduler.mode', 'FAIR')
+        spark_conf.set('spark.cores.max', '4')
 
         # Initialise the spark session
         spark_session_conf = (
@@ -21,4 +26,4 @@ class SparkHooks:
             .config(conf=spark_conf)
         )
         _spark_session = spark_session_conf.getOrCreate()
-        _spark_session.sparkContext.setLogLevel("WARN")
+        _spark_session.sparkContext.setLogLevel("OFF")

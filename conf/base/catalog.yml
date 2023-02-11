@@ -6,35 +6,73 @@
 
 ratings:
   type: spark.SparkDataSet
-  filepath: data/01_raw/ratings.csv
+  filepath: data/01_raw/ratings_small.csv
+  file_format: csv
   load_args:
-    # dataframe size control // number of edges user->movie
-    # set to null to load entire dataframe
-    nrows: 300007
+    header: True
+    inferSchema: True
+  save_args:
+    sep: '|'
+    header: True
 
 genome_scores:
   type: spark.SparkDataSet
   filepath: data/01_raw/genome-scores.csv
+  file_format: csv
+  load_args:
+    header: True
+    inferSchema: True
+  save_args:
+    sep: '|'
+    header: True
 
 genome_tags:
   type: spark.SparkDataSet
   filepath: data/01_raw/genome-tags.csv
+  file_format: csv
+  load_args:
+    header: True
+    inferSchema: True
+  save_args:
+    sep: '|'
+    header: True
 
 links:
   type: spark.SparkDataSet
   filepath: data/01_raw/links.csv
+  file_format: csv
+  load_args:
+    header: True
+    inferSchema: True
+  save_args:
+    sep: '|'
+    header: True
 
 movies:
   type: spark.SparkDataSet
   filepath: data/01_raw/movies.csv
+  file_format: csv
+  load_args:
+    header: True
+    inferSchema: True
+  save_args:
+    sep: '|'
+    header: True
 
 tags:
   type: spark.SparkDataSet
   filepath: data/01_raw/tags.csv
+  file_format: csv
+  load_args:
+    header: True
+    inferSchema: True
+  save_args:
+    sep: '|'
+    header: True
 
-users_rating_movies_network:
-  type: CachedDataSet
-  dataset:
-    type: pickle.PickleDataSet
-    filepath: data/04_feature/users_rating_movies_network.pickle
-
+#users_rating_movies_network:
+#  type: CachedDataSet
+#  dataset:
+#    type: pickle.PickleDataSet
+#    filepath: data/04_feature/users_rating_movies_network.pickle
+#

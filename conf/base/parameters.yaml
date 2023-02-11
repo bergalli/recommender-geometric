@@ -1,0 +1,11 @@
+spark:
+  driver:
+    maxResultSize: 1g
+    memory: 4g
+  executor:
+    memory: 16g
+  scheduler:
+    mode: FAIR
+  spark:
+    cores:
+      max: 4
