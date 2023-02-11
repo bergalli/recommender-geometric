@@ -10,7 +10,6 @@ from .nodes import (
     # create_dataframe_movies_nodes_attributes,
     define_users_to_movies_edges,
     define_movies_attributes,
-    create_pyg_network,
 )
 
 

@@ -13,11 +13,12 @@ class SparkHooks:
         # # Load the spark configuration in spark.yaml using the config loader
         # parameters = context.config_loader.get("parameters*", "parameters/**")["spark"]
         spark_conf = SparkConf()
-        spark_conf.set('spark.driver.maxResultSize', '1g')
-        spark_conf.set('spark.driver.memory', '8g')
-        spark_conf.set('spark.executor.memory', '4g')
+        spark_conf.set('spark.driver.maxResultSize', '4g')
+        # spark_conf.set('spark.driver.memory', '8g')
+        # spark_conf.set('spark.executor.memory', '4g')
         spark_conf.set('spark.scheduler.mode', 'FAIR')
-        spark_conf.set('spark.cores.max', '4')
+        # spark_conf.set('spark.cores.max', '4')
+        spark_conf.set("petastorm.spark.converter.parentCacheDirUrl", "file://data")
 
         # Initialise the spark session
         spark_session_conf = (

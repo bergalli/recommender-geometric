@@ -37,6 +37,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                     movies_nodes_attr="movies_nodes_attr",
                 ),
                 outputs="users_rating_movies_network",
+                name="pipe_start",
             ),
             node(
                 make_graph_undirected,
@@ -44,7 +45,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                     data="users_rating_movies_network",
                 ),
                 outputs="undirected_graph",
-                name="pipe_start",
+
             ),
             node(
                 make_ttv_data,
@@ -58,7 +59,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                 inputs=dict(
                     train_data="train_data",
                 ),
-                outputs=["model", "weight"],
+                outputs=["model", "target_weight"],
             ),
             node(
                 get_sampler_dataloader,
@@ -69,7 +70,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                 train_gcn_model_distributed,
                 inputs=dict(
                     model="model",
-                    weight="weight",
+                    weight="target_weight",
                     train_dataloader="subgraph_sampler",
                     val_data="val_data",
                     test_data="test_data",

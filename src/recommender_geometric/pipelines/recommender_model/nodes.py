@@ -4,7 +4,7 @@ generated using Kedro 0.18.4
 """
 
 import torch
-
+from petastorm.spark import SparkDatasetConverter, make_spark_converter
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader, DataLoader
 from torch_geometric.transforms import RandomLinkSplit, ToUndirected
@@ -22,6 +22,11 @@ def make_graph_tensors(
     weight,
     pivoted_nodes_genome_scores,
 ):
+    source_nodes_converter = make_spark_converter(source_nodes)
+    dest_nodes_converter = make_spark_converter(dest_nodes)
+    weight_converter = make_spark_converter(weight)
+    pivoted_nodes_genome_scores_converter = make_spark_converter(pivoted_nodes_genome_scores)
+
     edge_index = torch.tensor([source_nodes, dest_nodes])
     edge_label = torch.tensor(weight)
 

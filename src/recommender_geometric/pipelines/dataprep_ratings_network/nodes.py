@@ -88,20 +88,6 @@ def create_dataframe_graph_edges(
 #     ]
 
 
-def define_users_to_movies_edges(
-    edges_dataframe: pd.DataFrame,
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-
-    # source nodes
-    src = edges_dataframe["user_node_id"]
-    # destination nodes
-    dst = edges_dataframe["movie_node_id"]
-    # weight of each edge
-    weight = edges_dataframe["rating"]
-
-    return src, dst, weight
-
-
 def define_movies_attributes(
     edges_dataframe: pd.DataFrame,
     genome_scores: pd.DataFrame,
@@ -125,9 +111,23 @@ def define_movies_attributes(
     # sort index so that rows are ordered according to movie node id # todo spark pivot auto sort ?
     pivoted_nodes_genome_scores = pivoted_nodes_genome_scores.sort_index()
 
-    # fill missing genome relevances with 0, for movies without a defined genome
-    pivoted_nodes_genome_scores = pivoted_nodes_genome_scores.fillna(0)
+    # fill missing genome relevances with 0, for movies without a defined genome # todo take forever
+    # pivoted_nodes_genome_scores = pivoted_nodes_genome_scores.fillna(0)
 
     return pivoted_nodes_genome_scores
 
 
+def define_users_to_movies_edges(
+    edges_dataframe: pd.DataFrame,
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """
+    Keep single column dataframes because kedro not handling pandas spark series
+    """
+    # source nodes
+    src = edges_dataframe.loc[:, ["user_node_id"]]
+    # destination nodes
+    dst = edges_dataframe.loc[:, ["movie_node_id"]]
+    # weight of each edge
+    weight = edges_dataframe.loc[:, ["rating"]]
+
+    return src, dst, weight
