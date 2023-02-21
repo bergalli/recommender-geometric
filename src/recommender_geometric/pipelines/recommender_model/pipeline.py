@@ -12,7 +12,8 @@ from .nodes import (
     instanciate_model,
     get_sampler_dataloader,
     train_gcn_model,
-    train_gcn_model_distributed,
+    train_gcn_model_multiproc,
+    train_gcn_model_distributed_with_lightning,
 )
 
 
@@ -45,7 +46,6 @@ def create_pipeline(**kwargs) -> Pipeline:
                     data="users_rating_movies_network",
                 ),
                 outputs="undirected_graph",
-
             ),
             node(
                 make_ttv_data,
@@ -66,12 +66,23 @@ def create_pipeline(**kwargs) -> Pipeline:
                 inputs=dict(train_data="train_data"),
                 outputs="subgraph_sampler",
             ),
+            # node(
+            #     train_gcn_model_multiproc,
+            #     inputs=dict(
+            #         model="model",
+            #         weight="target_weight",
+            #         train_dataloader="subgraph_sampler",
+            #         val_data="val_data",
+            #         test_data="test_data",
+            #     ),
+            #     outputs="trained_model",
+            # ),
             node(
-                train_gcn_model_distributed,
+                train_gcn_model_distributed_with_lightning(),
                 inputs=dict(
                     model="model",
                     weight="target_weight",
-                    train_dataloader="subgraph_sampler",
+                    train_data="train_data",
                     val_data="val_data",
                     test_data="test_data",
                 ),

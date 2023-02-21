@@ -64,9 +64,9 @@ class GNNEncoder(torch.nn.Module):
         self.conv1 = SAGEConv((-1, -1), hidden_channels)
         self.conv2 = SAGEConv((-1, -1), out_channels)
 
-    def forward(self, x, edge_index):
-        x = self.conv1(x, edge_index).relu()
-        x = self.conv2(x, edge_index)
+    def forward(self, x, edge_index_dict):
+        x = self.conv1(x, edge_index_dict).relu()
+        x = self.conv2(x, edge_index_dict)
         return x
 
 
