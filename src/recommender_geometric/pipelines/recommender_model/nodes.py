@@ -14,7 +14,10 @@ import torch.distributed as dist
 import os
 
 # import horovod.spark.torch as hvd
-
+# hvd.init()
+# ddaata = torch.utils.data.distributed.DistributedSampler(
+#     source_nodes, num_replicas=hvd.size(), rank=hvd.rank()
+# )
 
 def make_graph_tensors(
     source_nodes,
@@ -22,20 +25,11 @@ def make_graph_tensors(
     weight,
     pivoted_nodes_genome_scores,
 ):
-    import horovod.torch as hvd
 
-    hvd.init()
-    ddaata = torch.utils.data.distributed.DistributedSampler(
-        source_nodes, num_replicas=hvd.size(), rank=hvd.rank()
-    )
-    edge_index = torch.tensor([source_nodes, dest_nodes])
+    edge_index = torch.tensor([source_nodes.values, dest_nodes.values])
     edge_label = torch.tensor(weight)
 
-    ddaata = torch.utils.data.distributed.DistributedSampler(
-        source_nodes, num_replicas=hvd.size(), rank=hvd.rank()
-    )
-
-    movies_nodes_attr = pivoted_nodes_genome_scores.values.tolist()
+    movies_nodes_attr = pivoted_nodes_genome_scores.values
     movies_nodes_attr = torch.tensor(movies_nodes_attr)
 
     return edge_index, edge_label, movies_nodes_attr

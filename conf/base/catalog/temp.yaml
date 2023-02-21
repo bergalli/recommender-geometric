@@ -1,0 +1,87 @@
+# Datasets save/loaders in local mode ------------------------------------------------
+
+local.source_nodes:
+  type: pandas.CSVDataSet
+  filepath: data/04_feature/source_nodes.csv
+  load_args:
+    sep: '|'
+  save_args:
+    sep: '|'
+    index: False
+
+local.dest_nodes:
+  type: pandas.CSVDataSet
+  filepath: data/04_feature/dest_nodes.csv
+  load_args:
+    sep: '|'
+  save_args:
+    sep: '|'
+    index: False
+
+local.weight:
+  type: pandas.CSVDataSet
+  filepath: data/04_feature/weight.csv
+  load_args:
+    sep: '|'
+  save_args:
+    sep: '|'
+    index: False
+
+local.pivoted_nodes_genome_scores:
+  type: pandas.CSVDataSet
+  filepath: data/04_feature/pivoted_nodes_genome_scores.csv
+  load_args:
+    sep: '|'
+    index_col: movie_node_id
+  save_args:
+    sep: '|'
+
+# Datasets save/loaders in spark mode ------------------------------------------------
+
+spark.source_nodes:
+  type: extras.datasets.SparkDataFrame
+  filepath: data/04_feature/source_nodes.csv
+  file_format: csv
+  load_args:
+    header: True
+    inferSchema: True
+  save_args:
+    sep: '|'
+    header: True
+    mode: overwrite
+
+spark.dest_nodes:
+  type: extras.datasets.SparkDataFrame
+  filepath: data/04_feature/dest_nodes.csv
+  file_format: csv
+  load_args:
+    header: True
+    inferSchema: True
+  save_args:
+    sep: '|'
+    header: True
+    mode: overwrite
+
+spark.weight:
+  type: extras.datasets.SparkDataFrame
+  filepath: data/04_feature/weight.csv
+  file_format: csv
+  load_args:
+    header: True
+    inferSchema: True
+  save_args:
+    sep: '|'
+    header: True
+    mode: overwrite
+
+spark.pivoted_nodes_genome_scores:
+  type: extras.datasets.SparkDataFrame
+  filepath: data/04_feature/pivoted_nodes_genome_scores.csv
+  file_format: csv
+  load_args:
+    header: True
+    inferSchema: True
+  save_args:
+    sep: '|'
+    header: True
+    mode: overwrite

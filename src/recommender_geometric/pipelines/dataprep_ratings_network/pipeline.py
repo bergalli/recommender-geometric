@@ -6,8 +6,6 @@ generated using Kedro 0.18.4
 from kedro.pipeline import Pipeline, node, pipeline
 from .nodes import (
     create_dataframe_graph_edges,
-    # create_dataframe_users_nodes_attributes,
-    # create_dataframe_movies_nodes_attributes,
     define_users_to_movies_edges,
     define_movies_attributes,
 )
@@ -23,24 +21,6 @@ def create_pipeline(**kwargs) -> Pipeline:
                 ),
                 outputs="edges_dataframe",
             ),
-            # node(
-            #     create_dataframe_users_nodes_attributes,
-            #     inputs=dict(
-            #         edges_dataframe="edges_dataframe",
-            #         tags="tags",
-            #     ),
-            #     outputs="users_attributes_dataframe",
-            # ),
-            # node(
-            #     create_dataframe_movies_nodes_attributes,
-            #     inputs=dict(
-            #         edges_dataframe="edges_dataframe",
-            #         movies="movies",
-            #         genome_scores="genome_scores",
-            #         genome_tags="genome_tags",
-            #     ),
-            #     outputs="movies_attributes_dataframe",
-            # ),
             node(
                 define_users_to_movies_edges,
                 inputs=dict(
@@ -59,5 +39,5 @@ def create_pipeline(**kwargs) -> Pipeline:
         ],
         inputs={"ratings", "genome_scores"},
         outputs={"source_nodes", "dest_nodes", "weight", "pivoted_nodes_genome_scores"},
-        namespace="data_prep",
+        # namespace="dataprep_ratings_nework",
     )

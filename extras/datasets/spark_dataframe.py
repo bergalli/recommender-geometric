@@ -7,13 +7,9 @@ class SparkDataFrame(SparkDataSet):
         super().__init__(*args, **kwargs)
 
     def _load(self) -> pyspark.pandas.frame.DataFrame:
-        load_path = _strip_dbfs_prefix(self._fs_prefix + str(self._get_load_path()))
-        read_obj = self._get_spark().read
+        spark_sql_dataframe = super()._load()
+        return spark_sql_dataframe.to_pandas_on_spark()
 
-        # Pass schema if defined
-        if self._schema:
-            read_obj = read_obj.schema(self._schema)
-
-        spark_sql_dataframe = read_obj.load(load_path, self._file_format, **self._load_args)
-        spark_pandas_dataframe = spark_sql_dataframe.to_pandas_on_spark()
-        return spark_pandas_dataframe
+    def _save(self, data: pyspark.pandas.frame.DataFrame):
+        data = data.to_spark()
+        return super()._save(data)

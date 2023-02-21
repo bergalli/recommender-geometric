@@ -29,6 +29,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                     pivoted_nodes_genome_scores="pivoted_nodes_genome_scores",
                 ),
                 outputs=["edge_index", "edge_label", "movies_nodes_attr"],
+                name="training_start"
             ),
             node(
                 create_pyg_network,
@@ -78,7 +79,7 @@ def create_pipeline(**kwargs) -> Pipeline:
             #     outputs="trained_model",
             # ),
             node(
-                train_gcn_model_distributed_with_lightning(),
+                train_gcn_model_distributed_with_lightning,
                 inputs=dict(
                     model="model",
                     weight="target_weight",
@@ -90,5 +91,5 @@ def create_pipeline(**kwargs) -> Pipeline:
             ),
         ],
         inputs={"source_nodes", "dest_nodes", "weight", "pivoted_nodes_genome_scores"},
-        namespace="recommender_model",
+        # namespace="recommender_model",
     )
