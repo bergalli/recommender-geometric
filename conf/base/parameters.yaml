@@ -1,5 +1,3 @@
-backend: spark # spark or local
-
 spark:
   driver:
     maxResultSize: 1g

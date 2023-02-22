@@ -3,25 +3,14 @@ This is a boilerplate pipeline 'make_ratings_network'
 generated using Kedro 0.18.4
 """
 
-from typing import Tuple, Union
+from typing import Tuple
 
-
-import pyspark.pandas
-import pandas as pandas
-import os
-
-SparkOrPandasDF = Union[pandas.DataFrame, pyspark.pandas.DataFrame]
-
-BACKEND = os.environ["RECOMMENDER_GEOMETRIC_BACKEND"]
-if BACKEND == "spark":
-    pd = pyspark.pandas
-else:
-    pd = pandas
+import pyspark.pandas as pd
 
 
 def create_dataframe_graph_edges(
-    ratings: SparkOrPandasDF,
-) -> SparkOrPandasDF:
+    ratings: pd.DataFrame,
+) -> pd.DataFrame:
     """
     Creates new columns node_movie_id and node_user_id going to 0 up to the number or users or movies, to
     label the nodes in the graph.
@@ -31,19 +20,13 @@ def create_dataframe_graph_edges(
     :return:
     """
 
-    get_unique_column_id = lambda df: (
-        df.unique() if isinstance(ratings, pandas.DataFrame) else df.unique().values
-    )
-
     # assign nodes ids as a range to movieId and userId
-    movie_id_to_node_id = {
-        movie_id: node_id
-        for node_id, movie_id in enumerate(get_unique_column_id(ratings["movieId"]))
-    }
+    unique_movie_ids = ratings["movieId"].unique().values
+    movie_id_to_node_id = {movie_id: node_id for node_id, movie_id in enumerate(unique_movie_ids)}
     ratings["movie_node_id"] = ratings["movieId"].map(lambda x: movie_id_to_node_id[x])
-    user_id_to_node_id = {
-        user_id: node_id for node_id, user_id in enumerate(get_unique_column_id(ratings["userId"]))
-    }
+
+    unique_user_ids = ratings["userId"].unique().values
+    user_id_to_node_id = {user_id: node_id for node_id, user_id in enumerate(unique_user_ids)}
     ratings["user_node_id"] = ratings["userId"].map(lambda x: user_id_to_node_id[x])
 
     # convert ratings from a float [0,5] scale to an integer [0,100] scale
@@ -55,9 +38,9 @@ def create_dataframe_graph_edges(
 
 
 def define_movies_attributes(
-    edges_dataframe: SparkOrPandasDF,
-    genome_scores: SparkOrPandasDF,
-) -> SparkOrPandasDF:
+    edges_dataframe: pd.DataFrame,
+    genome_scores: pd.DataFrame,
+) -> pd.DataFrame:
 
     # merge node ids to movies genome scores
     # right join to keep all nodes in the output dataframe
@@ -75,7 +58,9 @@ def define_movies_attributes(
         index="movie_node_id", columns="tagId", values="relevance"
     )
     # sort index so that rows are ordered according to movie node id
-    pivoted_nodes_genome_scores.index = pivoted_nodes_genome_scores.index.astype(int)
+    pivoted_nodes_genome_scores = pivoted_nodes_genome_scores.set_index(
+        keys=pivoted_nodes_genome_scores.index.astype(int)
+    )
     pivoted_nodes_genome_scores = pivoted_nodes_genome_scores.sort_index()
 
     # fill missing genome relevances with 0, for movies without a defined genome # todo take forever
@@ -85,8 +70,8 @@ def define_movies_attributes(
 
 
 def define_users_to_movies_edges(
-    edges_dataframe: SparkOrPandasDF,
-) -> Tuple[SparkOrPandasDF, SparkOrPandasDF, SparkOrPandasDF]:
+    edges_dataframe: pd.DataFrame,
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Keep single column dataframes because kedro not handling pandas spark series
     """
@@ -98,3 +83,4 @@ def define_users_to_movies_edges(
     weight = edges_dataframe.loc[:, ["rating"]]
 
     return src, dst, weight
+

@@ -1,45 +1,15 @@
-# Datasets loaders in local mode ------------------------------------------------
-
-local.ratings:
-  type: pandas.CSVDataSet
+ratings:
+  type: extras.datasets.SparkDataFrame
   filepath: data/01_raw/ratings.csv
+  file_format: csv
   load_args:
+    header: True
+    inferSchema: True
     # dataframe size control // number of edges user->movie
     # set to null to load entire dataframe
     nrows: 300007
 
-local.genome_scores:
-  type: pandas.CSVDataSet
-  filepath: data/01_raw/genome-scores.csv
-
-local.genome_tags:
-  type: pandas.CSVDataSet
-  filepath: data/01_raw/genome-tags.csv
-
-local.links:
-  type: pandas.CSVDataSet
-  filepath: data/01_raw/links.csv
-
-local.movies:
-  type: pandas.CSVDataSet
-  filepath: data/01_raw/movies.csv
-
-local.tags:
-  type: pandas.CSVDataSet
-  filepath: data/01_raw/tags.csv
-
-
-# Datasets loaders in spark mode ------------------------------------------------
-
-spark.ratings:
-  type: extras.datasets.SparkDataFrame
-  filepath: data/01_raw/ratings.csv
-  file_format: csv
-  load_args:
-    header: True
-    inferSchema: True
-
-spark.genome_scores:
+genome_scores:
   type: extras.datasets.SparkDataFrame
   filepath: data/01_raw/genome-scores.csv
   file_format: csv
@@ -47,7 +17,7 @@ spark.genome_scores:
     header: True
     inferSchema: True
 
-spark.genome_tags:
+genome_tags:
   type: extras.datasets.SparkDataFrame
   filepath: data/01_raw/genome-tags.csv
   file_format: csv
@@ -55,7 +25,7 @@ spark.genome_tags:
     header: True
     inferSchema: True
 
-spark.links:
+links:
   type: extras.datasets.SparkDataFrame
   filepath: data/01_raw/links.csv
   file_format: csv
@@ -63,7 +33,7 @@ spark.links:
     header: True
     inferSchema: True
 
-spark.movies:
+movies:
   type: extras.datasets.SparkDataFrame
   filepath: data/01_raw/movies.csv
   file_format: csv
@@ -71,7 +41,7 @@ spark.movies:
     header: True
     inferSchema: True
 
-spark.tags:
+tags:
   type: extras.datasets.SparkDataFrame
   filepath: data/01_raw/tags.csv
   file_format: csv
