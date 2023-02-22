@@ -2,16 +2,19 @@
 This is a boilerplate pipeline 'recommender_model'
 generated using Kedro 0.18.4
 """
+from torch_geometric.datasets import OGB_MAG
 import torch
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader, DataLoader
 from torch_geometric.transforms import RandomLinkSplit, ToUndirected
 import torch.multiprocessing as mp
-from .model import Model, train_model, test_model, weighted_mse_loss
-
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
 import os
+from petastorm.spark import make_spark_converter
+from .model import Model, train_model, test_model, weighted_mse_loss
+
+
 
 # import horovod.spark.torch as hvd
 # hvd.init()

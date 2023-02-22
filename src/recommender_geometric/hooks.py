@@ -1,8 +1,8 @@
 from kedro.framework.hooks import hook_impl
 from pyspark import SparkConf
 from pyspark.sql import SparkSession
-import ray
-import raydp
+# import ray
+# import raydp
 import os
 
 
