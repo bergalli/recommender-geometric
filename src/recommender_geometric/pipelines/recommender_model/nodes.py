@@ -2,7 +2,7 @@
 This is a boilerplate pipeline 'recommender_model'
 generated using Kedro 0.18.4
 """
-from torch_geometric.datasets import OGB_MAG
+
 import torch
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader, DataLoader
@@ -22,17 +22,21 @@ from .model import Model, train_model, test_model, weighted_mse_loss
 #     source_nodes, num_replicas=hvd.size(), rank=hvd.rank()
 # )
 
+def create_large_dataset():
+
+    return large_dataset
+
 def make_graph_tensors(
     source_nodes,
     dest_nodes,
     weight,
-    pivoted_nodes_genome_scores,
+    pivoted_genome_scores,
 ):
 
     edge_index = torch.tensor([source_nodes.values, dest_nodes.values])
     edge_label = torch.tensor(weight)
 
-    movies_nodes_attr = pivoted_nodes_genome_scores.values
+    movies_nodes_attr = pivoted_genome_scores.values
     movies_nodes_attr = torch.tensor(movies_nodes_attr)
 
     return edge_index, edge_label, movies_nodes_attr

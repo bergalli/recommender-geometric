@@ -26,7 +26,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                     source_nodes="source_nodes",
                     dest_nodes="dest_nodes",
                     weight="weight",
-                    pivoted_nodes_genome_scores="pivoted_nodes_genome_scores",
+                    pivoted_genome_scores="pivoted_genome_scores",
                 ),
                 outputs=["edge_index", "edge_label", "movies_nodes_attr"],
                 name="training_start"
@@ -90,6 +90,6 @@ def create_pipeline(**kwargs) -> Pipeline:
                 outputs="trained_model",
             ),
         ],
-        inputs={"source_nodes", "dest_nodes", "weight", "pivoted_nodes_genome_scores"},
+        inputs={"source_nodes", "dest_nodes", "weight", "pivoted_genome_scores"},
         # namespace="recommender_model",
     )

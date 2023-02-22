@@ -1,6 +1,6 @@
 source_nodes:
-  type: extras.datasets.SparkDataFrame
-  filepath: data/04_feature/source_nodes.csv
+  type: spark.SparkDataSet
+  filepath: data/04_feature/source_nodes
   file_format: csv
   load_args:
     header: True
@@ -11,8 +11,8 @@ source_nodes:
     mode: overwrite
 
 dest_nodes:
-  type: extras.datasets.SparkDataFrame
-  filepath: data/04_feature/dest_nodes.csv
+  type: spark.SparkDataSet
+  filepath: data/04_feature/dest_nodes
   file_format: csv
   load_args:
     header: True
@@ -23,8 +23,8 @@ dest_nodes:
     mode: overwrite
 
 weight:
-  type: extras.datasets.SparkDataFrame
-  filepath: data/04_feature/weight.csv
+  type: spark.SparkDataSet
+  filepath: data/04_feature/weight
   file_format: csv
   load_args:
     header: True
@@ -35,8 +35,8 @@ weight:
     mode: overwrite
 
 pivoted_nodes_genome_scores:
-  type: extras.datasets.SparkDataFrame
-  filepath: data/04_feature/pivoted_nodes_genome_scores.csv
+  type: spark.SparkDataSet
+  filepath: data/04_feature/pivoted_nodes_genome_scores
   file_format: csv
   load_args:
     header: True

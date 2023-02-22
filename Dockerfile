@@ -33,14 +33,15 @@ RUN apt-get -y install cuda
 # RUN pip3 install -U pip setuptools requests
 RUN pip3 install poetry==1.3.2
 
-ENV PIP_DEFAULT_TIMEOUT=100
+# to bypass timeout error on long download time
+ENV PIP_DEFAULT_TIMEOUT=10000
 
 COPY poetry.lock  /app/poetry.lock
 COPY pyproject.toml  /app/pyproject.toml
 
 WORKDIR /app
 
-# RUN poetry config virtualenvs.create false && poetry install
+RUN poetry config virtualenvs.create false && poetry install
 
 
 #

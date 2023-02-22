@@ -1,5 +1,5 @@
 ratings:
-  type: extras.datasets.SparkDataFrame
+  type: spark.SparkDataSet
   filepath: data/01_raw/ratings.csv
   file_format: csv
   load_args:
@@ -7,10 +7,10 @@ ratings:
     inferSchema: True
     # dataframe size control // number of edges user->movie
     # set to null to load entire dataframe
-    nrows: 300007
+#    nrows: 300007
 
 genome_scores:
-  type: extras.datasets.SparkDataFrame
+  type: spark.SparkDataSet
   filepath: data/01_raw/genome-scores.csv
   file_format: csv
   load_args:
@@ -18,7 +18,7 @@ genome_scores:
     inferSchema: True
 
 genome_tags:
-  type: extras.datasets.SparkDataFrame
+  type: spark.SparkDataSet
   filepath: data/01_raw/genome-tags.csv
   file_format: csv
   load_args:
@@ -26,7 +26,7 @@ genome_tags:
     inferSchema: True
 
 links:
-  type: extras.datasets.SparkDataFrame
+  type: spark.SparkDataSet
   filepath: data/01_raw/links.csv
   file_format: csv
   load_args:
@@ -34,7 +34,7 @@ links:
     inferSchema: True
 
 movies:
-  type: extras.datasets.SparkDataFrame
+  type: spark.SparkDataSet
   filepath: data/01_raw/movies.csv
   file_format: csv
   load_args:
@@ -42,7 +42,7 @@ movies:
     inferSchema: True
 
 tags:
-  type: extras.datasets.SparkDataFrame
+  type: spark.SparkDataSet
   filepath: data/01_raw/tags.csv
   file_format: csv
   load_args:
