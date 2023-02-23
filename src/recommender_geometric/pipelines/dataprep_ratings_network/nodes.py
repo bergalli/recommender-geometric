@@ -56,37 +56,37 @@ def define_movies_attributes(
 ) -> DataFrame:
 
     movie_id_to_node_id_mapper = create_map([lit(x) for x in chain(*movie_id_to_node_id.items())])
-    genome_scores = genome_scores.withColumn("movie_node_id", movie_id_to_node_id_mapper[col("movieId")])
+    genome_scores = genome_scores.withColumn(
+        "movie_node_id", movie_id_to_node_id_mapper[col("movieId")]
+    )
 
     # fill in missing values for movies without a genome
     sc = SparkContext.getOrCreate()
-    all_movie_node_id = sc.range(min(movie_id_to_node_id.values()),
-                                 max(movie_id_to_node_id.values())).map(Row("movie_node_id")).toDF()
-    all_movie_node_id = all_movie_node_id.crossJoin(genome_scores.select("tagId")).cache()
-    genome_scores = genome_scores.join(broadcast(all_movie_node_id), on=["movie_node_id", "tagId"], how="outer") \
-        .withColumn(
+    all_movie_node_id = (
+        sc.range(min(movie_id_to_node_id.values()), max(movie_id_to_node_id.values()))
+        .map(Row("movie_node_id"))
+        .toDF()
+    )
+    # cross join all movie node ids with the unique genome tag values
+    all_movie_node_id = all_movie_node_id.crossJoin(
+        genome_scores.select("tagId").distinct()
+    ).cache()
+    # outer join of the initial dataframe with all movie node ids matched with tags
+    # fill relavance missing values with 0
+    genome_scores = genome_scores.join(
+        broadcast(all_movie_node_id), on=["movie_node_id", "tagId"], how="outer"
+    ).withColumn(
         "relevance",
-        last(
-            "relevance",
-            ignorenulls=True
-        ).over(
-            Window.partitionBy("tagId").orderBy("movie_node_id") \
-                .rowsBetween(Window.unboundedPreceding, 0)
-        )
+        last("relevance", ignorenulls=True).over(
+            Window.partitionBy("tagId")
+            .orderBy("movie_node_id")
+            .rowsBetween(Window.unboundedPreceding, 0)
+        ),
     )
 
     pivoted_genome_scores = genome_scores.groupBy("movie_node_id").pivot("tagId").max("relevance")
     pivoted_genome_scores = pivoted_genome_scores.orderBy(col("movie_node_id"))
     pivoted_genome_scores = pivoted_genome_scores.drop("movie_node_id")
-    # sort index so that rows are ordered according to movie node id
-    # pivoted_genome_scores["integer_index"] = pivoted_genome_scores.index.astype(int)
-    # pivoted_genome_scores = pivoted_genome_scores.set_index(
-    #     keys="integer_index", drop=True
-    # )
-    # pivoted_genome_scores = pivoted_genome_scores.sort_index()
-    #
-    # # fill missing genome relevances with 0, for movies without a defined genome
-    # pivoted_genome_scores = pivoted_genome_scores.fillna(0)
 
     return pivoted_genome_scores
 

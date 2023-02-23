@@ -34,9 +34,9 @@ weight:
     header: True
     mode: overwrite
 
-pivoted_nodes_genome_scores:
+pivoted_genome_scores:
   type: spark.SparkDataSet
-  filepath: data/04_feature/pivoted_nodes_genome_scores
+  filepath: data/04_feature/pivoted_genome_scores
   file_format: csv
   load_args:
     header: True
