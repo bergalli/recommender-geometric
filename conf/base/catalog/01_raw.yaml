@@ -11,7 +11,7 @@ ratings:
 
 genome_scores:
   type: spark.SparkDataSet
-  filepath: data/01_raw/genome-scores.csv
+  filepath: data/01_raw/ml-25m/genome-scores.csv
   file_format: csv
   load_args:
     header: True
@@ -19,7 +19,7 @@ genome_scores:
 
 genome_tags:
   type: spark.SparkDataSet
-  filepath: data/01_raw/genome-tags.csv
+  filepath: data/01_raw/ml-25m/genome-tags.csv
   file_format: csv
   load_args:
     header: True
@@ -27,7 +27,7 @@ genome_tags:
 
 links:
   type: spark.SparkDataSet
-  filepath: data/01_raw/links.csv
+  filepath: data/01_raw/ml-25m/links.csv
   file_format: csv
   load_args:
     header: True
@@ -35,7 +35,7 @@ links:
 
 movies:
   type: spark.SparkDataSet
-  filepath: data/01_raw/movies.csv
+  filepath: data/01_raw/ml-25m/movies.csv
   file_format: csv
   load_args:
     header: True
@@ -43,7 +43,7 @@ movies:
 
 tags:
   type: spark.SparkDataSet
-  filepath: data/01_raw/tags.csv
+  filepath: data/01_raw/ml-25m/tags.csv
   file_format: csv
   load_args:
     header: True
