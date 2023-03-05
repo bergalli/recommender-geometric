@@ -66,10 +66,9 @@ def create_pyg_network(
     data["movie"].x = movies_nodes_attr
 
     n_users = len(set(edge_index[0, :].tolist()))
-    data["user"].x = torch.eye(n_users)
+    data["user"].x = torch.eye(n_users, dtype=torch.int8)
 
     data["user", "rates", "movie"].edge_index = edge_index
-
     data["user", "rates", "movie"].edge_label = edge_label
 
     return data
@@ -78,7 +77,8 @@ def create_pyg_network(
 def make_graph_undirected(data: HeteroData):
     # Add a reverse ('movie', 'rev_rates', 'user') relation for message passing.
     data = ToUndirected()(data)
-    del data["movie", "rev_rates", "user"].edge_label  # Remove "reverse" label.
+    # Remove "reverse" label. But reverse index is kept.
+    del data["movie", "rev_rates", "user"].edge_label
 
     return data
 
@@ -93,7 +93,6 @@ def make_ttv_data(data: HeteroData):
         edge_types=[("user", "rates", "movie")],  # for heteroData
         rev_edge_types=[("movie", "rev_rates", "user")],  # for heteroData, prevents data leakage
     )(data)
-    del data
 
     return train_data, val_data, test_data
 
@@ -145,9 +144,9 @@ def train_gcn_model(model, weight, train_dataloader, val_data, test_data):
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
     for epoch in range(15):
-        for train_data in iter(train_dataloader):
-            loss = train_model(model, optimizer, train_data, weight)
-            train_rmse = test_model(model, train_data)
+        for train_data_chunk in iter(train_dataloader):
+            loss = train_model(model, optimizer, train_data_chunk, weight)
+            train_rmse = test_model(model, train_data_chunk)
             val_rmse = test_model(model, val_data)
             test_rmse = test_model(model, test_data)
             print(

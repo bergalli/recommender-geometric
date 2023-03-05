@@ -1,0 +1,43 @@
+edge_index:
+  type: MemoryDataSet
+  copy_mode: assign
+edge_label:
+  type: MemoryDataSet
+  copy_mode: assign
+movies_nodes_attr:
+  type: MemoryDataSet
+  copy_mode: assign
+
+users_rating_movies_network:
+  type: MemoryDataSet
+  copy_mode: assign
+
+undirected_graph:
+  type: MemoryDataSet
+  copy_mode: assign
+
+test_data:
+  type: MemoryDataSet
+  copy_mode: assign
+train_data:
+  type: MemoryDataSet
+  copy_mode: assign
+val_data:
+  type: MemoryDataSet
+  copy_mode: assign
+
+subgraph_sampler:
+  type: MemoryDataSet
+  copy_mode: assign
+
+recommender_model:
+  type: MemoryDataSet
+  copy_mode: assign
+target_weight:
+  type: MemoryDataSet
+  copy_mode: assign
+
+
+#trained_model:
+#  type: MemoryDataSet
+
