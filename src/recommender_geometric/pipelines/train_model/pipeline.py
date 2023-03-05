@@ -1,6 +1,6 @@
 """
-This is a boilerplate pipeline 'recommender_model'
-generated using Kedro 0.18.4
+This is a boilerplate pipeline 'train_model'
+generated using Kedro 0.18.5
 """
 
 from kedro.pipeline import Pipeline, node, pipeline
@@ -25,7 +25,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                 inputs=dict(
                     source_nodes="source_nodes",
                     dest_nodes="dest_nodes",
-                    weight="weight",
+                    edges_labels="edges_labels",
                     pivoted_genome_scores="pivoted_genome_scores",
                 ),
                 outputs=["edge_index", "edge_label", "movies_nodes_attr"],
@@ -39,7 +39,6 @@ def create_pipeline(**kwargs) -> Pipeline:
                     movies_nodes_attr="movies_nodes_attr",
                 ),
                 outputs="users_rating_movies_network",
-                name="pipe_start",
             ),
             node(
                 make_graph_undirected,
@@ -60,7 +59,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                 inputs=dict(
                     train_data="train_data",
                 ),
-                outputs=["model", "target_weight"],
+                outputs=["recommender_model", "target_weight"],
             ),
             node(
                 get_sampler_dataloader,
@@ -70,7 +69,7 @@ def create_pipeline(**kwargs) -> Pipeline:
             # node(
             #     train_gcn_model_multiproc,
             #     inputs=dict(
-            #         model="model",
+            #         recommender_model="recommender_model",
             #         weight="target_weight",
             #         train_dataloader="subgraph_sampler",
             #         val_data="val_data",
@@ -81,7 +80,7 @@ def create_pipeline(**kwargs) -> Pipeline:
             node(
                 train_gcn_model_distributed_with_lightning,
                 inputs=dict(
-                    model="model",
+                    model="recommender_model",
                     weight="target_weight",
                     train_data="train_data",
                     val_data="val_data",
@@ -90,6 +89,6 @@ def create_pipeline(**kwargs) -> Pipeline:
                 outputs="trained_model",
             ),
         ],
-        inputs={"source_nodes", "dest_nodes", "weight", "pivoted_genome_scores"},
+        inputs={"source_nodes", "dest_nodes", "edges_labels", "pivoted_genome_scores"},
         # namespace="recommender_model",
     )

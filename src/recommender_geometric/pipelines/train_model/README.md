@@ -1,6 +1,6 @@
-# Pipeline recommender_model
+# Pipeline train_model
 
-> *Note:* This is a `README.md` boilerplate generated using `Kedro 0.18.4`.
+> *Note:* This is a `README.md` boilerplate generated using `Kedro 0.18.5`.
 
 ## Overview
 

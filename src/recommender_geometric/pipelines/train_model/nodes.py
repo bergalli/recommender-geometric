@@ -1,8 +1,7 @@
 """
-This is a boilerplate pipeline 'recommender_model'
-generated using Kedro 0.18.4
+This is a boilerplate pipeline 'train_model'
+generated using Kedro 0.18.5
 """
-
 import torch
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import NeighborLoader, DataLoader
@@ -11,9 +10,13 @@ import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
 import os
-from petastorm.spark import make_spark_converter
-from .model import Model, train_model, test_model, weighted_mse_loss
-
+from recommender_geometric.recommender_model.model import (
+    Model,
+    train_model,
+    test_model,
+    weighted_mse_loss,
+)
+import pyspark.sql
 
 
 # import horovod.spark.torch as hvd
@@ -22,53 +25,52 @@ from .model import Model, train_model, test_model, weighted_mse_loss
 #     source_nodes, num_replicas=hvd.size(), rank=hvd.rank()
 # )
 
-def create_large_dataset():
+# def create_large_dataset():
+#
+#     return large_dataset
 
-    return large_dataset
 
 def make_graph_tensors(
-    source_nodes,
-    dest_nodes,
-    weight,
-    pivoted_genome_scores,
+    source_nodes: pyspark.sql.DataFrame,
+    dest_nodes: pyspark.sql.DataFrame,
+    edges_labels: pyspark.sql.DataFrame,
+    pivoted_genome_scores: pyspark.sql.DataFrame,
 ):
+    source_nodes = source_nodes.toPandas()
+    dest_nodes = dest_nodes.toPandas()
+    edges_labels = edges_labels.toPandas()
+    pivoted_genome_scores = pivoted_genome_scores.toPandas()
 
-    edge_index = torch.tensor([source_nodes.values, dest_nodes.values])
-    edge_label = torch.tensor(weight)
+    edge_index = torch.tensor(
+        [source_nodes["user_node_id"].values, dest_nodes["movie_node_id"].values]
+    )
+    del source_nodes, dest_nodes
 
-    movies_nodes_attr = pivoted_genome_scores.values
-    movies_nodes_attr = torch.tensor(movies_nodes_attr)
+    edge_label = torch.tensor(edges_labels["rating"].values)
+    del edges_labels
+
+    movies_nodes_attr = pivoted_genome_scores
+    movies_nodes_attr = torch.tensor(movies_nodes_attr.values)
+    del pivoted_genome_scores
 
     return edge_index, edge_label, movies_nodes_attr
 
 
-def create_pyg_network(edge_index, edge_label, movies_nodes_attr) -> HeteroData:
-
+def create_pyg_network(
+    edge_index,
+    edge_label,
+    movies_nodes_attr,
+) -> HeteroData:
     data = HeteroData()
 
     data["movie"].x = movies_nodes_attr
+
     n_users = len(set(edge_index[0, :].tolist()))
     data["user"].x = torch.eye(n_users)
 
     data["user", "rates", "movie"].edge_index = edge_index
-    data["user", "rates", "movie"].edge_label = edge_label
 
-    # data_list = []
-    # batch_size=1000
-    # for idx in np.arange(0, edge_index.shape[1], batch_size):
-    #     train_data = HeteroData()
-    #
-    #     train_data["movie"].x = movies_nodes_attr
-    #     n_users = len(set(edge_index[0, :].tolist()))
-    #     train_data["user"].x = torch.eye(n_users)
-    #
-    #     train_data["user", "rates", "movie"].edge_index = edge_index[:, idx:idx + batch_size]
-    #     train_data["user", "rates", "movie"].edge_label = edge_label[idx:idx + batch_size]
-    #
-    #     # Add a reverse ('movie', 'rev_rates', 'user') relation for message passing.
-    #     train_data = ToUndirected()(train_data)
-    #     del train_data["movie", "rev_rates", "user"].edge_label  # Remove "reverse" label.
-    #     data_list.append(train_data)
+    data["user", "rates", "movie"].edge_label = edge_label
 
     return data
 
@@ -91,17 +93,19 @@ def make_ttv_data(data: HeteroData):
         edge_types=[("user", "rates", "movie")],  # for heteroData
         rev_edge_types=[("movie", "rev_rates", "user")],  # for heteroData, prevents data leakage
     )(data)
+    del data
 
     return train_data, val_data, test_data
 
 
 def instanciate_model(train_data):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = Model(hidden_channels=16, data=train_data).to(device)
+    model = Model(hidden_channels=16, metadata=train_data.metadata()).to(device)
 
-    # Due to lazy initialization, we need to run one model step so the number
-    # of parameters can be inferred:
+    # Due to lazy initialization, we need to run one recommender_model step so the number
+    # of parameters of the encoder can be inferred:
     with torch.no_grad():
+        # model(train_data.x_dict, train_data.edge_index_dict, train_data.edge_label_dict)
         model.encoder(train_data.x_dict, train_data.edge_index_dict)
 
     # We have an unbalanced dataset with different proportions of ratings.
@@ -133,7 +137,7 @@ def train_gcn_model(model, weight, train_dataloader, val_data, test_data):
     """
     Vanilla training
     """
-    # model = config["model"]
+    # recommender_model = config["recommender_model"]
     # weight = config["weight"]
     # train_dataloader = config["train_dataloader"]
     # val_data = config["val_data"]
@@ -173,7 +177,7 @@ def train_gcn_model_multiproc(
         # initialize the process group
         dist.init_process_group("gloo", rank=rank, world_size=world_size)
 
-        # create model and move it to GPU with id rank
+        # create recommender_model and move it to GPU with id rank
         model = model.to("cpu")
         ddp_model = DDP(model, device_ids=None)
 

@@ -87,10 +87,10 @@ class EdgeDecoder(torch.nn.Module):
 
 
 class Model(torch.nn.Module):
-    def __init__(self, hidden_channels, data):
+    def __init__(self, hidden_channels, metadata):
         super().__init__()
         self.encoder = GNNEncoder(hidden_channels, hidden_channels)
-        self.encoder = to_hetero(self.encoder, data.metadata())
+        self.encoder = to_hetero(self.encoder, metadata)
         self.decoder = EdgeDecoder(hidden_channels)
 
     def forward(self, x_dict, edge_index_dict, edge_label_index):

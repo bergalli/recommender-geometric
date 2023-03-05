@@ -1,13 +1,10 @@
 ratings:
   type: spark.SparkDataSet
-  filepath: data/01_raw/ratings.csv
+  filepath: data/01_raw/ml-25m/ratings.csv
   file_format: csv
   load_args:
     header: True
     inferSchema: True
-    # dataframe size control // number of edges user->movie
-    # set to null to load entire dataframe
-#    nrows: 300007
 
 genome_scores:
   type: spark.SparkDataSet

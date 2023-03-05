@@ -2,46 +2,51 @@ source_nodes:
   type: spark.SparkDataSet
   filepath: data/04_feature/source_nodes
   file_format: csv
-  load_args:
-    header: True
-    inferSchema: True
   save_args:
     sep: '|'
     header: True
     mode: overwrite
+  load_args:
+    sep: '|'
+    header: True
+    inferSchema: True
 
 dest_nodes:
   type: spark.SparkDataSet
   filepath: data/04_feature/dest_nodes
   file_format: csv
-  load_args:
-    header: True
-    inferSchema: True
   save_args:
     sep: '|'
     header: True
     mode: overwrite
+  load_args:
+    sep: '|'
+    header: True
+    inferSchema: True
 
-weight:
+edges_labels:
   type: spark.SparkDataSet
-  filepath: data/04_feature/weight
+  filepath: data/04_feature/edges_labels
   file_format: csv
-  load_args:
-    header: True
-    inferSchema: True
   save_args:
     sep: '|'
     header: True
     mode: overwrite
+  load_args:
+    sep: '|'
+    header: True
+    inferSchema: True
+
 
 pivoted_genome_scores:
   type: spark.SparkDataSet
   filepath: data/04_feature/pivoted_genome_scores
   file_format: csv
-  load_args:
-    header: True
-    inferSchema: True
   save_args:
     sep: '|'
     header: True
     mode: overwrite
+  load_args:
+    sep: '|'
+    header: True
+    inferSchema: True

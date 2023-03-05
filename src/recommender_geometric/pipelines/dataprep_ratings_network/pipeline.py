@@ -26,7 +26,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                 inputs=dict(
                     edges_dataframe="edges_dataframe",
                 ),
-                outputs=["source_nodes", "dest_nodes", "weight"],
+                outputs=["source_nodes", "dest_nodes", "edges_labels"],
             ),
             node(
                 define_movies_attributes,
@@ -38,6 +38,6 @@ def create_pipeline(**kwargs) -> Pipeline:
             ),
         ],
         inputs={"ratings", "genome_scores"},
-        outputs={"source_nodes", "dest_nodes", "weight", "pivoted_genome_scores"},
+        outputs={"source_nodes", "dest_nodes", "edges_labels", "pivoted_genome_scores"},
         # namespace="dataprep_ratings_nework",
     )

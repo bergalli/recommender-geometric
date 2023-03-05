@@ -37,7 +37,7 @@ def demo_basic(rank, world_size):
     print(f"Running basic DDP example on rank {rank}.")
     setup(rank, world_size)
 
-    # create model and move it to GPU with id rank
+    # create recommender_model and move it to GPU with id rank
     model = ToyModel().to("cpu")
     ddp_model = DDP(model, device_ids=None)
 
