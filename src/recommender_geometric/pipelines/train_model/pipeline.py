@@ -55,16 +55,16 @@ def create_pipeline(**kwargs) -> Pipeline:
                 outputs=["train_data", "val_data", "test_data"],
             ),
             node(
-                instanciate_model,
-                inputs=dict(
-                    train_data="train_data",
-                ),
-                outputs=["recommender_model", "target_weight"],
-            ),
-            node(
                 get_sampler_dataloader,
                 inputs=dict(train_data="train_data"),
                 outputs="subgraph_sampler",
+            ),
+            node(
+                instanciate_model,
+                inputs=dict(
+                    subgraph_sampler="subgraph_sampler",
+                ),
+                outputs=["recommender_model", "target_weight"],
             ),
             # node(
             #     train_gcn_model_multiproc,
@@ -82,7 +82,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                 inputs=dict(
                     model="recommender_model",
                     weight="target_weight",
-                    train_data="train_data",
+                    train_data="subgraph_sampler",
                     val_data="val_data",
                     test_data="test_data",
                 ),

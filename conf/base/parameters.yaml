@@ -1,3 +1,5 @@
+n_users_to_keep: 50000
+
 spark:
   driver:
     maxResultSize: 1g

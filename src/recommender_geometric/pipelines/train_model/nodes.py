@@ -97,24 +97,6 @@ def make_ttv_data(data: HeteroData):
     return train_data, val_data, test_data
 
 
-def instanciate_model(train_data):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = Model(hidden_channels=16, metadata=train_data.metadata()).to(device)
-
-    # Due to lazy initialization, we need to run one recommender_model step so the number
-    # of parameters of the encoder can be inferred:
-    with torch.no_grad():
-        # model(train_data.x_dict, train_data.edge_index_dict, train_data.edge_label_dict)
-        model.encoder(train_data.x_dict, train_data.edge_index_dict)
-
-    # We have an unbalanced dataset with different proportions of ratings.
-    # We are predicting new edges and the rating associated, herefore we use a weighted MSE loss.
-    weight = torch.bincount(train_data["user", "movie"].edge_label)
-    weight = weight.max() / weight
-
-    return model, weight
-
-
 def get_sampler_dataloader(train_data):
 
     unique_user_node_id = torch.tensor(
@@ -123,13 +105,34 @@ def get_sampler_dataloader(train_data):
 
     subgraph_loader = NeighborLoader(
         train_data,
-        batch_size=4096,
+        batch_size=512,
         shuffle=False,
         num_neighbors={key: [-1] * 2 for key in train_data.edge_types},
         input_nodes=("user", unique_user_node_id),
     )
 
     return subgraph_loader
+
+
+def instanciate_model(subgraph_sampler):
+    a_chunk = next(iter(subgraph_sampler))
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = Model(hidden_channels=16, metadata=a_chunk.metadata()).to(device)
+
+    # Due to lazy initialization, we need to run one recommender_model step so the number
+    # of parameters of the encoder can be inferred:
+    with torch.no_grad():
+        # model(train_data.x_dict, train_data.edge_index_dict, train_data.edge_label_dict)
+        model.encoder(a_chunk.x_dict, a_chunk.edge_index_dict)
+
+    # We have an unbalanced dataset with different proportions of ratings.
+    # We are predicting new edges and the rating associated, herefore we use a weighted MSE loss.
+    weight = torch.bincount(a_chunk["user", "movie"].edge_label)
+    weight = weight.max() / weight
+
+    return model, weight
+
 
 
 def train_gcn_model(model, weight, train_dataloader, val_data, test_data):

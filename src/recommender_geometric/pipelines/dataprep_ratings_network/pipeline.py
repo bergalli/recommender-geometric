@@ -5,6 +5,7 @@ generated using Kedro 0.18.4
 
 from kedro.pipeline import Pipeline, node, pipeline
 from .nodes import (
+    filter_low_viewers,
     create_dataframe_graph_edges,
     define_users_to_movies_edges,
     define_movies_attributes,
@@ -15,9 +16,17 @@ def create_pipeline(**kwargs) -> Pipeline:
     return pipeline(
         [
             node(
-                create_dataframe_graph_edges,
+                filter_low_viewers,
                 inputs=dict(
                     ratings="ratings",
+                    n_users_to_keep="params:n_users_to_keep",
+                ),
+                outputs="ratings_filtered",
+            ),
+            node(
+                create_dataframe_graph_edges,
+                inputs=dict(
+                    ratings="ratings_filtered",
                 ),
                 outputs=["edges_dataframe", "movie_id_to_node_id", "user_id_to_node_id"],
             ),
